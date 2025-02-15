@@ -1,0 +1,50 @@
+import pandas as pd
+
+
+file_path = "/Users/mattpritchett/Downloads/Combined_NBA.csv"
+df = pd.read_csv(file_path)
+
+# Rename columns
+df.rename(columns={
+    "PTS": "Away_PTS",
+    "PTS.1": "Home_PTS",
+    "Attend.": "Attendance",  # Fixing the column name issue
+    "Home/Neutral": "Home_Team",
+    "Visitor/Neutral": "Away_Team"
+}, inplace=True)
+
+# Create Outcome column based on points
+if "Home_PTS" in df.columns and "Away_PTS" in df.columns:
+    df["Outcome"] = df.apply(lambda row: "Home Win" if row["Home_PTS"] > row["Away_PTS"] else "Away Win", axis=1)
+
+#  Missing Values
+df['Home_PTS'].fillna(df['Home_PTS'].median(), inplace=True)
+df['Away_PTS'].fillna(df['Away_PTS'].median(), inplace=True)
+df['Attendance'].fillna(df['Attendance'].median(), inplace=True)
+
+#  Fixing Data Format Issues
+df['Home_PTS'] = pd.to_numeric(df['Home_PTS'], errors='coerce')
+df['Away_PTS'] = pd.to_numeric(df['Away_PTS'], errors='coerce')
+df['Attendance'] = pd.to_numeric(df['Attendance'], errors='coerce')
+
+#  Remove Duplicates
+df.drop_duplicates(inplace=True)
+
+# Filtering Outlier Values
+df = df[(df['Attendance'] > 1000) & (df['Attendance'] < 100000)]
+df = df[df['Home_PTS'] >= 0]
+df = df[df['Away_PTS'] >= 0]
+
+#  Remove Unnecessary Columns
+columns_to_drop = ["Unnamed: 6", "Unnamed: 7"]
+df = df.drop(columns=[col for col in columns_to_drop if col in df.columns], errors='ignore')
+
+# Fixing Common Bugs
+df['Outcome'] = df['Outcome'].astype(str).str.strip()
+
+
+cleaned_file_path = "/Users/mattpritchett/Downloads/Cleaned_Combined_NBA.csv"
+df.to_csv(cleaned_file_path, index=False)
+
+
+print(f"Cleaned dataset saved to: {cleaned_file_path}")
